@@ -14,6 +14,15 @@ struct MyConfig{
     text: String
 }
 
+fn service_one() -> Router{
+    Router::new().route("/", get(|| async {Html("Service one".to_string())}))
+}
+
+fn service_two() -> Router{
+    Router::new().route("/", get(|| async {Html("Service two".to_string())}))
+}
+
+
 #[tokio::main]
 async fn main() {
     let shared_counter = Arc::new(MyCounter {
@@ -24,8 +33,10 @@ async fn main() {
         text: "This is my configuration".to_string()
     });
 
-    let app = Router::new().
-        route("/", get(handler))
+    let app = Router::new()
+        .nest("/1", service_one())
+        .nest("/2", service_two())
+        .route("/", get(handler))
         .route("/book/:id", get(path_extract))
         .route("/book", get(query_extract))
         .route("/header", get(header_extract))
