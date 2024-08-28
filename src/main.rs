@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 use axum::{response::Html, routing::get, Router};
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
@@ -14,8 +15,22 @@ struct MyConfig{
     text: String
 }
 
+struct MyState(i32);
 fn service_one() -> Router{
-    Router::new().route("/", get(|| async {Html("Service one".to_string())}))
+    let state= Arc::new(MyState(5));
+    Router::new().route("/", get(sv1_handler))
+        .with_state(state)
+}
+
+async fn sv1_handler(
+    Extension(counter): Extension<Arc<MyCounter>>,
+    State(state): State<Arc<MyState>>
+) -> Html<String>{
+    counter.counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    Html(format!("Service {}-{}",
+                 counter.counter.load(std::sync::atomic::Ordering::Relaxed),
+                 state.0
+    ))
 }
 
 fn service_two() -> Router{
