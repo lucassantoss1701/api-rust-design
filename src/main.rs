@@ -1,5 +1,7 @@
-use axum::{ Router};
-use reqwest::{get, StatusCode};
+use axum::{Json, Router};
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use axum::routing::get;
 
 #[tokio::main]
 async fn main() {
@@ -13,7 +15,17 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn handler() -> StatusCode{
-    StatusCode::SERVICE_UNAVAILABLE
+async fn handler() -> Result<impl IntoResponse, StatusCode>{
+    let start = std::time::SystemTime::now();
+
+    let seconds_wrapped = start
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?.as_secs() % 3;
+
+    let divided = 100u64.checked_div(seconds_wrapped)
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(divided))
+
 }
 
