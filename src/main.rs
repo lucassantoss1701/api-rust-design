@@ -1,5 +1,5 @@
 use std::time::Duration;
-use axum::{middleware, Router};
+use axum::{middleware, Extension, Router};
 use axum::extract::Request;
 use axum::http::{HeaderMap, StatusCode};
 use axum::middleware::Next;
@@ -26,6 +26,7 @@ async fn main() {
 }
 
 async fn header_handler(
+    Extension(auth): Extension<AuthHeader>,
     headers: HeaderMap
 ) -> Html<String>{
     if let Some(header) = headers.get("x-request-id"){
@@ -64,13 +65,18 @@ async fn make_request(){
     println!("{}", response);
 }
 
+
+#[derive(Clone)]
+struct AuthHeader{id: String}
+
 async fn auth(
     headers: HeaderMap,
-    req: Request,
+    mut req: Request,
     next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, String)>{
     if let Some(header) = headers.get("x-request-id"){
         if header.to_str().unwrap() == "1234"{
+            req.extensions_mut().insert(AuthHeader{id: "header".to_string()});
             return Ok(next.run(req).await)
         }
     }
