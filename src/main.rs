@@ -5,15 +5,24 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::middleware::Next;
 use axum::response::{Html, IntoResponse};
 use axum::routing::get;
-use tower_http::services::ServeDir;
+use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
 
 #[tokio::main]
 async fn main() {
+
+    let service = ServiceBuilder::new()
+        .layer(CompressionLayer::new());
+    // .layer(CorsLayer::new()
+    //     .allow_origin(Any)
+    //     .allow_methods([Method::GET, Method::POST])
+    // )
+
     let app = Router::new()
         .route("/", get(header_handler))
-        .route_layer(middleware::from_fn(auth))
-        .fallback_service(ServeDir::new("web"))
-        ;
+        .route_layer(middleware::from_fn(auth));
+        // .fallback_service(ServeDir::new("web"))
+        // ;
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3001")
         .await
